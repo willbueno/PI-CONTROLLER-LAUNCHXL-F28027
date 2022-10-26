@@ -4,8 +4,29 @@
  *  Created on: 26 de out de 2022
  *      Author: William
  */
-
 #include "Peripheral_Setup.h"
+#include "math.h"
+
+#define PI 3.14159265359
+#define Kp 1560                                         // Kp = Kp*PRD <- Kp = 1.04  PRD = 1500
+#define Ki 0.626
+#define Ts 0.00005
+
+//uint32_t index = 0;
+//uint16_t sinetable[400];
+
+//uint16_t plot[400];
+
+uint16_t adc1 = 0;
+uint16_t adc2 = 0;
+uint16_t *adc = &adc1;
+
+float setpoint = 1.5;
+float out = 0;
+float e = 10;
+float e_1 = 10;
+float u = 0;
+float u_1 = 0;
 
 __interrupt void isr_cpu_timer0(void);
 __interrupt void isr_adc(void);
@@ -18,7 +39,7 @@ int main(void)
 
     IER = 0x0000;                                       // Disable CPU interrupts
     IFR = 0x0000;                                       // Clear all CPU interrupt flags
-    
+
     InitPieVectTable();                                 // Initialize the PIE vector table
     InitGpio();                                         // Initialize default GPIO
 
@@ -56,12 +77,37 @@ __interrupt void isr_cpu_timer0(void)
 {
     GpioDataRegs.GPATOGGLE.bit.GPIO2 = 1;
     GpioDataRegs.GPATOGGLE.bit.GPIO3 = 1;
-    
+
     PieCtrlRegs.PIEACK.all = PIEACK_GROUP1;
 }
 
 __interrupt void isr_adc(void)
 {
+    // ADC
+    adc1 = AdcResult.ADCRESULT0;
+    out = 3.3 * adc1 / 4095.0;
+
+    // PI CONTROLLER
+    e = setpoint - out;
+    u = u_1 + Kp * (e - e_1) + 0.5 * Ki * Ts * (e + e_1);
+
+    if (u > 1500)
+    {
+        u = 1500;
+    }
+    else if (u < 0)
+    {
+        u = 0;
+    }
+
+    u_1 = u;
+    e_1 = e;
+
+    EPwm1Regs.CMPA.half.CMPA = (uint16_t) u;
+
+    // GRAPHS
+//    plot[index] = *adc;
+
     AdcRegs.ADCINTFLGCLR.bit.ADCINT1 = 1;
     PieCtrlRegs.PIEACK.all = PIEACK_GROUP1;
 }

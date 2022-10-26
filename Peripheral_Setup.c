@@ -67,7 +67,7 @@ void Setup_ePWM(void)
 
     // Trigger ADC
     EPwm1Regs.ETSEL.bit.SOCAEN = 1;                     // Enable SOC on A group
-    EPwm1Regs.ETSEL.bit.SOCASEL = ET_CTR_PRDZERO;       // Trigger ADC on PRDZERO
+    EPwm1Regs.ETSEL.bit.SOCASEL = ET_CTR_ZERO;          // Trigger ADC on ZERO
     EPwm1Regs.ETPS.bit.SOCAPRD = ET_1ST;                // Trigger on every event
 
     SysCtrlRegs.PCLKCR0.bit.TBCLKSYNC = 1;              // Enable TBCLK within the EPWM
