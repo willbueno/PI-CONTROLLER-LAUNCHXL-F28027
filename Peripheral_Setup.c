@@ -14,14 +14,17 @@ void Setup_GPIO(void)
     // LED 3
     GpioCtrlRegs.GPAMUX1.bit.GPIO2 = 0;                 // GPIO2 - LED 3
     GpioCtrlRegs.GPADIR.bit.GPIO2 = 1;                  // I/O DIR - Output = 1
-
+    
     // LED 4
     GpioCtrlRegs.GPAMUX1.bit.GPIO3 = 0;                 // GPIO2 - LED 4
     GpioCtrlRegs.GPADIR.bit.GPIO3 = 1;                  // I/O DIR - Output = 1
 
     // PWM 1
-    GpioCtrlRegs.GPAMUX1.bit.GPIO4 = 1;                 // Configure GPIO0 as EPWM1A
-    GpioCtrlRegs.GPAPUD.bit.GPIO4 = 1;                  // Disable pull-up on GPIO1
+    GpioCtrlRegs.GPAMUX1.bit.GPIO0 = 1;                 // Configure GPIO0 as EPWM1A
+    GpioCtrlRegs.GPAPUD.bit.GPIO0 = 1;                  // Disable pull-up on GPIO0 (EPWM1A)
+    
+    GpioCtrlRegs.GPAPUD.bit.GPIO1 = 1;                  // Disable pull-up on GPIO1 (EPWM1B)
+    GpioCtrlRegs.GPAMUX1.bit.GPIO1 = 1;                 // Configure GPIO1 as EPWM1B
 
     EDIS;
 }
@@ -30,32 +33,37 @@ void Setup_ePWM(void)
 {
     EALLOW;
 
-    SysCtrlRegs.PCLKCR1.bit.EPWM1ENCLK =1;              // ePWM1
+    SysCtrlRegs.PCLKCR1.bit.EPWM1ENCLK = 1;             // EPWM1
 
     SysCtrlRegs.PCLKCR0.bit.TBCLKSYNC = 0;
 
     // PWM 1A
     EPwm1Regs.TBPRD = 1500;                             // Set period 20 kHz - uC_clock / (2*fs) for UP/DOWN
-
-    EPwm1Regs.CMPA.half.CMPA = 750;                     // Duty Cicle in 50% of PRD
-
-    EPwm1Regs.TBPHS.half.TBPHS = 0;                     // Phase is 0
-    EPwm1Regs.TBCTL.bit.SYNCOSEL = TB_CTR_ZERO;
+    
+    EPwm1Regs.CMPA.half.CMPA = 750;                     // Initial duty Cicle in 50% of PRD
+    
+    EPwm1Regs.TBPHS.half.TBPHS = 0;                     // Phase is 0  (600 - 360 degree, 200 - 120 degree)
+    EPwm1Regs.TBCTL.bit.SYNCOSEL = TB_CTR_ZERO;         // Synchronous pulse in 0 point
     EPwm1Regs.TBCTR = 0x0000;                           // Clear counter
     EPwm1Regs.TBCTL.bit.CTRMODE = TB_COUNT_UPDOWN;      // Count UP/DOWN
-    EPwm1Regs.TBCTL.bit.PHSEN = TB_ENABLE;              // Enable phase loading
+    EPwm1Regs.TBCTL.bit.PHSEN = TB_ENABLE;              // Enable phase loading reference
     EPwm1Regs.TBCTL.bit.HSPCLKDIV = TB_DIV1;            // Clock ratio to SYSCLKOUT
     EPwm1Regs.TBCTL.bit.CLKDIV = TB_DIV1;
 
-    EPwm1Regs.CMPCTL.bit.SHDWAMODE = CC_SHADOW;         // Load register every ZERO and PRD
+    EPwm1Regs.CMPCTL.bit.SHDWAMODE = CC_SHADOW;         // Load register every ZERO AND PRD
     EPwm1Regs.CMPCTL.bit.LOADAMODE = CC_CTR_ZERO_PRD;
-    EPwm1Regs.CMPCTL.bit.SHDWBMODE = CC_SHADOW;
-    EPwm1Regs.CMPCTL.bit.LOADBMODE = CC_CTR_ZERO_PRD;   // Load register every ZERO and PRD
+    EPwm1Regs.CMPCTL.bit.SHDWBMODE = CC_SHADOW;         // Load register every ZERO AND PRD
+    EPwm1Regs.CMPCTL.bit.LOADBMODE = CC_CTR_ZERO_PRD;
 
     EPwm1Regs.AQCTLA.bit.PRD = AQ_NO_ACTION;
     EPwm1Regs.AQCTLA.bit.ZRO = AQ_NO_ACTION;
-    EPwm1Regs.AQCTLA.bit.CAU = AQ_CLEAR;                // Set actions for EPWM3A
-    EPwm1Regs.AQCTLA.bit.CAD = AQ_SET;                  // Set actions for EPWM3A
+    EPwm1Regs.AQCTLA.bit.CAU = AQ_CLEAR;                // Set actions for EPWM1A
+    EPwm1Regs.AQCTLA.bit.CAD = AQ_SET;                  // Set actions for EPWM1A
+
+    EPwm1Regs.DBCTL.bit.OUT_MODE = DB_FULL_ENABLE;      // Enable Dead-band module
+    EPwm1Regs.DBCTL.bit.POLSEL = DB_ACTV_HIC;           // Active Hi Complementary
+    EPwm1Regs.DBFED = 8;                                // FED = 20 TBCLKs Tempo morto
+    EPwm1Regs.DBRED = 8;                                // RED = 20 TBCLKs Tempo morto
 
     // Trigger ADC
     EPwm1Regs.ETSEL.bit.SOCAEN = 1;                     // Enable SOC on A group
@@ -93,6 +101,6 @@ void Setup_ADC(void)
     AdcRegs.INTSEL1N2.bit.INT1CONT = 1;                 // ADCINTx Continuous Mode Enable. ADCINTx pulses are generated whenever an EOC pulse is generated irrespective if the flag bit is cleared or not.
     AdcRegs.INTSEL1N2.bit.INT1SEL = 0;                  // Connect ADCINT1 to EOC1
     AdcRegs.ADCINTFLGCLR.bit.ADCINT1 = 1;               // Make sure INT1 flag is clear
-
+    
     EDIS;
 }
