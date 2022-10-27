@@ -22,9 +22,6 @@ void Setup_GPIO(void)
     // PWM 1
     GpioCtrlRegs.GPAMUX1.bit.GPIO0 = 1;                 // Configure GPIO0 as EPWM1A
     GpioCtrlRegs.GPAPUD.bit.GPIO0 = 1;                  // Disable pull-up on GPIO0 (EPWM1A)
-    
-    GpioCtrlRegs.GPAPUD.bit.GPIO1 = 1;                  // Disable pull-up on GPIO1 (EPWM1B)
-    GpioCtrlRegs.GPAMUX1.bit.GPIO1 = 1;                 // Configure GPIO1 as EPWM1B
 
     EDIS;
 }
@@ -60,14 +57,9 @@ void Setup_ePWM(void)
     EPwm1Regs.AQCTLA.bit.CAU = AQ_CLEAR;                // Set actions for EPWM1A
     EPwm1Regs.AQCTLA.bit.CAD = AQ_SET;                  // Set actions for EPWM1A
 
-    EPwm1Regs.DBCTL.bit.OUT_MODE = DB_FULL_ENABLE;      // Enable Dead-band module
-    EPwm1Regs.DBCTL.bit.POLSEL = DB_ACTV_HIC;           // Active Hi Complementary
-    EPwm1Regs.DBFED = 8;                                // FED = 20 TBCLKs Tempo morto
-    EPwm1Regs.DBRED = 8;                                // RED = 20 TBCLKs Tempo morto
-
     // Trigger ADC
     EPwm1Regs.ETSEL.bit.SOCAEN = 1;                     // Enable SOC on A group
-    EPwm1Regs.ETSEL.bit.SOCASEL = ET_CTR_ZERO;          // Trigger ADC on ZERO
+    EPwm1Regs.ETSEL.bit.SOCASEL = ET_CTR_PRDZERO;       // Trigger ADC on ZERO
     EPwm1Regs.ETPS.bit.SOCAPRD = ET_1ST;                // Trigger on every event
 
     SysCtrlRegs.PCLKCR0.bit.TBCLKSYNC = 1;              // Enable TBCLK within the EPWM

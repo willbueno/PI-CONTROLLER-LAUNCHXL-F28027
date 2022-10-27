@@ -8,25 +8,16 @@
 #include "math.h"
 
 #define PI 3.14159265359
-#define Kp 1560                                         // Kp = Kp*PRD <- Kp = 1.04  PRD = 1500
-#define Ki 0.626
-#define Ts 0.00005
 
-//uint32_t index = 0;
-//uint16_t sinetable[400];
-
-//uint16_t plot[400];
-
-uint16_t adc1 = 0;
-uint16_t adc2 = 0;
-uint16_t *adc = &adc1;
+const float Kp = 0.221931321195673;
+const float Ki = 0.133209837196133;
+const float Ts = 25E-6;
 
 float setpoint = 1.5;
-float out = 0;
-float e = 10;
-float e_1 = 10;
-float u = 0;
-float u_1 = 0;
+float v_out = 0;
+
+float u[2] = {0, 0};
+float error[2] = {0, 0};
 
 __interrupt void isr_cpu_timer0(void);
 __interrupt void isr_adc(void);
@@ -84,29 +75,30 @@ __interrupt void isr_cpu_timer0(void)
 __interrupt void isr_adc(void)
 {
     // ADC
-    adc1 = AdcResult.ADCRESULT0;
-    out = 3.3 * adc1 / 4095.0;
+    v_out = AdcResult.ADCRESULT0 * 8.0586E-04;
+
+    // Error
+    error[0] = setpoint - v_out;
 
     // PI CONTROLLER
-    e = setpoint - out;
-    u = u_1 + Kp * (e - e_1) + 0.5 * Ki * Ts * (e + e_1);
+    u[0] = u[1] + Kp * (error[0] - error[1]) + Ki * Ts * 0.5 * (error[0] + error[1]);
 
-    if (u > 1500)
+    // Anti wind-up
+    if (u[0] > 3.3)
     {
-        u = 1500;
+        u[0] = 3.3;
     }
-    else if (u < 0)
+    else if (u[0] < 0)
     {
-        u = 0;
+        u[0] = 0.0;
     }
 
-    u_1 = u;
-    e_1 = e;
+    // Update variables
+    u[1] = u[0];
+    error[1] = error[0];
 
-    EPwm1Regs.CMPA.half.CMPA = (uint16_t) u;
-
-    // GRAPHS
-//    plot[index] = *adc;
+    // Update duty cycle
+    EPwm1Regs.CMPA.half.CMPA = (Uint16) (u[0] * 4.545454545454546E02);
 
     AdcRegs.ADCINTFLGCLR.bit.ADCINT1 = 1;
     PieCtrlRegs.PIEACK.all = PIEACK_GROUP1;
