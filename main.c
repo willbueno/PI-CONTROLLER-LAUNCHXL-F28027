@@ -9,8 +9,8 @@
 
 #define PI 3.14159265359
 
-const float Kp = 0.221931321195673;
-const float Ki = 0.133209837196133;
+const float Kp = 1.109656605978368;
+const float Ki = 0.666049185980663;
 const float Ts = 25E-6;
 
 float setpoint = 1.5;
